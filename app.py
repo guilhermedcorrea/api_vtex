@@ -1,4 +1,29 @@
-```Python
+import pandas as pd
+import requests
+import http.client
+from dotenv import load_dotenv
+import os
+import json
+import warnings
+from itertools import chain
+
+warnings.simplefilter(action='ignore')
+
+load_dotenv()
+conn = http.client.HTTPSConnection("api.vtex.com")
+TOKEN = os.getenv('TOKEN')
+SECRET_KEY = os.getenv('key')
+idloja = os.getenv('IDLOJA')
+
+headers = {
+            'Accept': "application/json",
+            'Content-Type': "application/json",
+            'X-VTEX-API-AppKey': f"{SECRET_KEY}",
+            'X-VTEX-API-AppToken': f"{TOKEN}"
+            }
+
+
+
 def calcula_preco(*args, **kwargs):
     for arg in args:
         
@@ -26,17 +51,12 @@ def calcula_preco(*args, **kwargs):
         
         }
   
-  
     dict_product_prices['new_price'] = round(float(calc),2)
     
     yield dict_product_prices
-```
+   
 
 
-<br>Faz a requisição e obtem informações de preço, preço base e politica comercial do produto. Cria um dicionario e calcula o novo valor com base na porcentagem do Marketplace e retorna com yield<br/>
-
-
-```Python
 def update_prices_vtex(new_price, idproduct,policyid):
 
     def get_product_prices(idproduct):
@@ -58,14 +78,8 @@ def update_prices_vtex(new_price, idproduct,policyid):
             }
         print(prices)
         yield prices
-```
-<br>Faz a requisição para a politica comercial principal 1, obtem os preços, usando a referencia do SKU que foi passada, cria um novo dicionarion e retorna para a função que ira fazer as atualizações<br/>
-
-
-
-
-```Python
-def update_prices(product_prices):
+        
+    def update_prices(product_prices):
         prices = next(product_prices)
 
 
@@ -88,9 +102,24 @@ def update_prices(product_prices):
 
         res = conn.getresponse()
         data = res.read()
-```
+        
 
-<br>Recebe a referencia, novo preço, preço da politica comercial principal, id da politica comercial principal, e o id da politica comericial que tera o preço alterado, envia as atualizações através do 'PUT'<br/>
+    #update_prices(price, idproduct)
+    
+    product_prices = get_product_prices(idproduct)
+    update_prices(product_prices)
+   
+listas = [{'SKU ID':776,'BASE PRICE':21.00,'CANALVENDA':14,'CUSTOENVIO':0.01,'CNT':2.00},
+         {'SKU ID':125,'BASE PRICE':1.99,'CANALVENDA':14,'CUSTOENVIO':0.20,'CNT':2.00},
+         {'SKU ID':775,'BASE PRICE':22.00,'CANALVENDA':14,'CUSTOENVIO':1.00,'CNT':2.00}]
 
+for lista in listas:
+    prices = calcula_preco(lista)
+    
+    new_prices = next(prices)
+  
+    if isinstance(new_prices, dict):
+        update_prices_vtex(new_prices['new_price'],new_prices['itemId'],1)
 
-<br>Ainda irei fazer melhorias nesse codigo. Esta em faze de desenvolvimento e testes<br/>
+    
+  
